@@ -3,6 +3,7 @@ package com.videotest.rtmp.util.pipeline;
 import com.videotest.rtmp.chunk.message.*;
 import com.videotest.rtmp.chunk.header.MessageHeader;
 import com.videotest.rtmp.chunk.type.AMF0;
+import com.videotest.rtmp.server.MessageHandler;
 import com.videotest.rtmp.util.DecodeState;
 import com.videotest.rtmp.chunk.ChunkFormat;
 import io.netty.buffer.ByteBuf;
@@ -24,12 +25,17 @@ public class RtmpDecoder extends ReplayingDecoder<DecodeState> {
 	
 	// todo : redis 로 대체 가능 여부 확인
 	private final Map<Integer, RtmpData> streamIdMap = new HashMap<>();
+	// todo : bean 등록 필요
+	private final MessageHandler messageHandler = new MessageHandler();
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		DecodeState state = super.state();
+		if (state == null) {
+			state = DecodeState.READY_TO_DECODE_HEADER;
+		}
 		
-		if (state == null || DecodeState.READY_TO_DECODE_HEADER.equals(state)) {
+		if (DecodeState.READY_TO_DECODE_HEADER.equals(state)) {
 			this.readHeader(in);
 			this.readHeaderMsg(in);
 			super.checkpoint(DecodeState.READY_TO_DECODE_PAYLOAD);
@@ -39,7 +45,7 @@ public class RtmpDecoder extends ReplayingDecoder<DecodeState> {
 				throw new RuntimeException("inner error: rtmpData or rtmpData message header should not be null");
 			}
 			int payloadLength = rtmpData.getMessageHeader().getPayloadlength();
-			if (1 > payloadLength) {
+			if (0 >= payloadLength) {
 				log.info("ignore a message with no payload");
 				super.checkpoint(DecodeState.READY_TO_DECODE_HEADER);
 				rtmpData.setPayload(null);
@@ -203,7 +209,6 @@ public class RtmpDecoder extends ReplayingDecoder<DecodeState> {
 	private void readHeaderMsg(ByteBuf in) throws Exception {
 		byte fmt = curFmt;
 		int csid = curStreamId;
-
 
 		RtmpData rtmpData = streamIdMap.get(csid); // todo : Redis로 대체
 		boolean isFirstMsg;

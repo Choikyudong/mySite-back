@@ -20,4 +20,8 @@ public class RtmpAudioMsg extends RtmpBaseMsg {
 		this.control = control;
 		this.audioBytes = audioBytes;
 	}
+
+	public boolean isAACSequenceHeader() {
+		return audioBytes.length > 1 && audioBytes[0] == 0x00;
+	}
 }

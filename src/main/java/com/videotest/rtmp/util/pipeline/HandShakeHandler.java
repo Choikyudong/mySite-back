@@ -54,6 +54,10 @@ public class HandShakeHandler extends ByteToMessageDecoder {
 		try {
 			handshakeChunk.setClient(Unpooled.buffer(1537));
 			input.readBytes(handshakeChunk.getClient());
+
+			if (handshakeChunk.getClient().array()[0] != 0x03) {
+				throw new Exception();
+			}
 		} catch (Exception e) {
 			log.error("reading data is failed");
 		}
@@ -81,6 +85,29 @@ public class HandShakeHandler extends ByteToMessageDecoder {
 		} else {
 			handshakeChunk.getServer().clear();
 		}
+
+		handshakeChunk.getServer().writeByte(0x03);
+		handshakeChunk.getServer().writeInt((int) (System.nanoTime()/1000));
+		handshakeChunk.getServer().writeInt(0);
+		handshakeChunk.getServer().writeBytes(generateRandomBytes(1528));
+
+		if (handshakeChunk.getClient() != null) {
+			handshakeChunk.getServer().writeBytes(handshakeChunk.getClient(), 1, 1536);
+		}
+
+		channelHandler.writeAndFlush(handshakeChunk.getServer());
+	}
+
+	public static byte[] generateRandomBytes(int size) {
+		byte[] bytes = new byte[size];
+		for (int i = 0; i < size; i++) {
+			bytes[i] = (byte) (Byte.MIN_VALUE + (int)(Math.random()*(Byte.MAX_VALUE-Byte.MIN_VALUE+1)));
+		}
+		return bytes;
+	}
+
+	public static int getRandomPortWithin(int smallest, int biggest) {
+		return smallest + (int)(Math.random()*(biggest-smallest+1));
 	}
 
 }

@@ -20,5 +20,13 @@ public class RtmpVideoMsg extends RtmpBaseMsg {
 		this.control = control;
 		this.videoBytes = videoBytes;
 	}
+	public boolean isH264KeyFrame() {
+		return control == 0x17;
+	}
+
+	public boolean isAVCSequenceHeader() {
+		return isH264KeyFrame() && videoBytes.length > 1 && videoBytes[0] == 0x00;
+	}
+
 
 }

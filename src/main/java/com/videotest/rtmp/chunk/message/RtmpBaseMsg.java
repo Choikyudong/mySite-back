@@ -10,7 +10,7 @@ public abstract class RtmpBaseMsg {
 
 	private final byte messageTypeId;
 
-	public RtmpBaseMsg(byte messageTypeId) {
+	protected RtmpBaseMsg(byte messageTypeId) {
 		this.messageTypeId = messageTypeId;
 	}
 
